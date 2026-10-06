@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
+import { useAuth } from '../hooks/useAuth'
 
 // TODO: build the Write Review page — see README.md "Your task".
 // This page is already routed at /reviews/new (write) and /reviews/:id (edit),
@@ -9,6 +10,7 @@ import { api } from '../api'
 const defaults = { courseCode: '', rating: 5, comment: '' }
 
 export default function ReviewForm() {
+  const { user } = useAuth()
   const nav = useNavigate()
   const { id } = useParams()
   const [form, setForm] = useState(defaults)
@@ -51,10 +53,27 @@ export default function ReviewForm() {
       if (id) {
         await api.patch(`/reviews/${id}`, form)
       } else {
+        // Attempt a frontend pre-check, but don't let it block the request if it fails
+        try {
+          const { data } = await api.get('/reviews')
+          const alreadyReviewed = data.reviews?.some(r =>
+            r.courseCode?.toUpperCase() === form.courseCode?.toUpperCase() &&
+            r.reviewedBy?._id === user?.id
+          )
+          if (alreadyReviewed) {
+            setError('You already reviewed this course')
+            return
+          }
+        } catch (preCheckErr) {
+          // Ignore pre-check failures and proceed to the POST request
+          console.warn('Pre-check failed, falling back to server validation')
+        }
+
         await api.post('/reviews', form)
       }
       nav('/reviews')
     } catch (err) {
+      // The server returns 409 for duplicates; we show that message here.
       setError(err.response?.data?.message || 'An unexpected error occurred')
     }
   }
