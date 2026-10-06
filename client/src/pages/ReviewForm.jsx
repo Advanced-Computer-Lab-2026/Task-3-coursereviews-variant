@@ -17,12 +17,32 @@ export default function ReviewForm() {
   // TODO (edit mode): when there is an `id`, load the review and fill the form.
   useEffect(() => {
     if (!id) return
-    // TODO
+
+    async function loadReview() {
+      setError('')
+      try {
+        const res = await api.get('/reviews/' + id)
+        const review = res.data.review
+        setForm({
+          courseCode: review.courseCode,
+          rating: review.rating,
+          comment: review.comment || ''
+        })
+      } catch (err) {
+        setError(err?.response?.data?.message || 'Could not load review')
+      }
+    }
+
+    loadReview()
   }, [id])
 
   // TODO: update `form` when an input changes (rating should be a number).
   function onChange(e) {
-    // TODO
+    const { name, value } = e.target
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'rating' ? Number(value) : value
+    }))
   }
 
   // TODO: POST a new review, or PATCH the existing one when editing,
@@ -30,14 +50,57 @@ export default function ReviewForm() {
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    // TODO
+    try {
+      const payload = {
+        courseCode: form.courseCode,
+        rating: form.rating,
+        comment: form.comment
+      }
+
+      if (id) {
+        await api.patch('/reviews/' + id, payload)
+      } else {
+        await api.post('/reviews', payload)
+      }
+
+      nav('/reviews')
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Could not save review')
+    }
+
   }
 
   return (
     <div className="max-w-lg mx-auto card">
       <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
       <form onSubmit={onSubmit} className="space-y-3">
-        {/* TODO: course code input, rating select (1-5) and comment textarea */}
+        <label className="block text-sm font-medium">
+          Course code
+          <input
+            className="input mt-1"
+            name="courseCode"
+            placeholder="e.g. CS101"
+            value={form.courseCode}
+            onChange={onChange}
+            required
+          />
+        </label>
+        <label className="block text-sm font-medium">
+          Rating
+          <select className="input mt-1" name="rating" value={form.rating} onChange={onChange}>
+            {[1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="block text-sm font-medium">
+          Comment
+          <textarea
+            className="input mt-1"
+            name="comment"
+            value={form.comment}
+            onChange={onChange}
+            rows="4"
+          />
+        </label>
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <button className="btn" type="submit">Save</button>
       </form>
