@@ -1,45 +1,136 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
-
-// TODO: build the Write Review page — see README.md "Your task".
-// This page is already routed at /reviews/new (write) and /reviews/:id (edit),
-// and both routes are wrapped in <ProtectedRoute>.
+import { useAuth } from '../hooks/useAuth'
 
 const defaults = { courseCode: '', rating: 5, comment: '' }
 
 export default function ReviewForm() {
   const nav = useNavigate()
   const { id } = useParams()
+  const { user } = useAuth()
   const [form, setForm] = useState(defaults)
   const [error, setError] = useState('')
 
-  // TODO (edit mode): when there is an `id`, load the review and fill the form.
+  // Reset form when opening /reviews/new or load review data when editing /reviews/:id
   useEffect(() => {
-    if (!id) return
-    // TODO
+    if (!id) {
+      setForm(defaults)
+      return
+    }
+
+    api.get(`/reviews/${id}`)
+      .then((res) => {
+        const reviewData = res.data.review || res.data
+        const { courseCode, rating, comment } = reviewData
+        setForm({
+          courseCode: courseCode || '',
+          rating: Number(rating) || 5,
+          comment: comment || ''
+        })
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message || 'Failed to fetch review')
+      })
   }, [id])
 
-  // TODO: update `form` when an input changes (rating should be a number).
   function onChange(e) {
-    // TODO
+    const { name, value } = e.target
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === 'rating' ? Number(value) : value
+    }))
   }
 
-  // TODO: POST a new review, or PATCH the existing one when editing,
-  // then go back to /reviews. Show the server's error message on failure.
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    // TODO
+
+    try {
+      // Check for duplicates before creating a new review
+      if (!id) {
+        const res = await api.get('/reviews')
+        const allReviews = Array.isArray(res.data) ? res.data : (res.data.reviews || [])
+        
+        const userId = user?.id || user?._id
+        const alreadyReviewed = allReviews.some(r => {
+          const reviewerId = typeof r.reviewedBy === 'object' ? r.reviewedBy?._id || r.reviewedBy?.id : r.reviewedBy
+          return (
+            String(reviewerId) === String(userId) &&
+            r.courseCode.trim().toUpperCase() === form.courseCode.trim().toUpperCase()
+          )
+        })
+
+        if (alreadyReviewed) {
+          setError(`You have already reviewed ${form.courseCode.trim().toUpperCase()}`)
+          return
+        }
+      }
+
+      if (id) {
+        await api.patch(`/reviews/${id}`, form)
+      } else {
+        await api.post('/reviews', form)
+      }
+      nav('/reviews')
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong')
+    }
   }
 
   return (
-    <div className="max-w-lg mx-auto card">
-      <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
-      <form onSubmit={onSubmit} className="space-y-3">
-        {/* TODO: course code input, rating select (1-5) and comment textarea */}
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-        <button className="btn" type="submit">Save</button>
+    <div className="max-w-xl mx-auto card p-6 bg-white rounded-2xl shadow-sm border border-gray-100 mt-6">
+      <h1 className="text-xl font-bold mb-5 text-gray-900">{id ? 'Edit' : 'Write'} Review</h1>
+      <form onSubmit={onSubmit} className="space-y-4">
+        {/* Course Code Input */}
+        <div>
+          <input
+            type="text"
+            name="courseCode"
+            value={form.courseCode}
+            onChange={onChange}
+            placeholder="CS101"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-gray-400"
+            required
+          />
+        </div>
+
+        {/* Rating Select */}
+        <div>
+          <select
+            name="rating"
+            value={form.rating}
+            onChange={onChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+          >
+            <option value={1}>1 / 5</option>
+            <option value={2}>2 / 5</option>
+            <option value={3}>3 / 5</option>
+            <option value={4}>4 / 5</option>
+            <option value={5}>5 / 5</option>
+          </select>
+        </div>
+
+        {/* Comment Textarea */}
+        <div>
+          <textarea
+            name="comment"
+            value={form.comment}
+            onChange={onChange}
+            placeholder="Great lectures and clear slides. Exams are tough but fair."
+            rows={3}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-gray-400"
+          />
+        </div>
+
+        {/* Error Display */}
+        {error && <div className="text-red-600 text-sm font-medium">{error}</div>}
+
+        <div>
+          <button className="btn px-5 py-1.5 text-sm rounded-lg border border-gray-300 shadow-sm" type="submit">
+            Save
+          </button>
+        </div>
       </form>
     </div>
   )
