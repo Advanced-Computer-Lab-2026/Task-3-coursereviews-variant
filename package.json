@@ -6,7 +6,7 @@
     "client"
   ],
   "scripts": {
-    "install:all": "npm --workspaces install",
+    "install:all": "npm install --include-workspace-root",
     "dev": "concurrently -n server,client -c blue,magenta \"npm:dev --workspace server\" \"npm:dev --workspace client\""
   },
   "devDependencies": {
