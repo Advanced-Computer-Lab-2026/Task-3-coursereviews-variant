@@ -52,11 +52,11 @@ export default function ReviewForm() {
             <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
             <form onSubmit={onSubmit} className="space-y-3">
                 {/* TODO: course code input, rating select (1-5) and comment textarea */}
-                <input name="courseCode" value={form.courseCode} onChange={onChange} placeholder='enter the course code' required />
-                <select name="rating" value={form.rating} onChange={onChange}>
+                <input className="input" name="courseCode" value={form.courseCode} onChange={onChange} placeholder='enter the course code' required />
+                <select className="input" name="rating" value={form.rating} onChange={onChange}>
                     {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
-                <textarea name="comment" value={form.comment} onChange={onChange} placeholder='enter your comment' />
+                <textarea className="input" name="comment" value={form.comment} onChange={onChange} placeholder='enter your comment' />
                 {error && <div className="text-red-600 text-sm">{error}</div>}
                 <button className="btn" type="submit">Save</button>
             </form>
