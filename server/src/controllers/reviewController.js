@@ -56,6 +56,13 @@ export async function createReview(req, res, next) {
     const { value, error } = reviewSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.message });
 
+    // Check if this user has already reviewed this course
+    const existing = await Review.findOne({
+      courseCode: value.courseCode.toUpperCase(),
+      reviewedBy: req.user.id
+    });
+    if (existing) return res.status(409).json({ message: 'You already reviewed this course' });
+
     const doc = await Review.create({ ...value, reviewedBy: req.user.id });
     res.status(201).json({ review: doc });
   } catch (err) {
