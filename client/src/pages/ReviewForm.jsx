@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 
-// TODO: build the Write Review page — see README.md "Your task".
-// This page is already routed at /reviews/new (write) and /reviews/:id (edit),
-// and both routes are wrapped in <ProtectedRoute>.
-
 const defaults = { courseCode: '', rating: 5, comment: '' }
 
 export default function ReviewForm() {
@@ -13,33 +9,122 @@ export default function ReviewForm() {
   const { id } = useParams()
   const [form, setForm] = useState(defaults)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // TODO (edit mode): when there is an `id`, load the review and fill the form.
   useEffect(() => {
-    if (!id) return
-    // TODO
+    let cancelled = false
+
+    async function loadReview() {
+      setError('')
+      if (!id) {
+        setForm(defaults)
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const { data } = await api.get(`/reviews/${id}`)
+        if (!cancelled) {
+          const review = data.review
+          setForm({
+            courseCode: review.courseCode,
+            rating: Number(review.rating),
+            comment: review.comment ?? ''
+          })
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.response?.data?.message || 'Failed to load review')
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    loadReview()
+    return () => {
+      cancelled = true
+    }
   }, [id])
 
-  // TODO: update `form` when an input changes (rating should be a number).
   function onChange(e) {
-    // TODO
+    const { name, value } = e.target
+    setForm(current => ({
+      ...current,
+      [name]: name === 'rating' ? Number(value) : value
+    }))
   }
 
-  // TODO: POST a new review, or PATCH the existing one when editing,
-  // then go back to /reviews. Show the server's error message on failure.
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    // TODO
+    setIsSaving(true)
+    const review = {
+      courseCode: form.courseCode,
+      rating: form.rating,
+      comment: form.comment
+    }
+
+    try {
+      if (id) {
+        await api.patch(`/reviews/${id}`, review)
+      } else {
+        await api.post('/reviews', review)
+      }
+      nav('/reviews')
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to save review')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <div className="max-w-lg mx-auto card">
       <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
       <form onSubmit={onSubmit} className="space-y-3">
-        {/* TODO: course code input, rating select (1-5) and comment textarea */}
+        <label className="sr-only" htmlFor="courseCode">Course code</label>
+        <input
+          id="courseCode"
+          className="input"
+          name="courseCode"
+          placeholder="Course code (e.g. CS101)"
+          value={form.courseCode}
+          onChange={onChange}
+          required
+          minLength={2}
+          disabled={isLoading || isSaving}
+        />
+        <label className="sr-only" htmlFor="rating">Rating</label>
+        <select
+          id="rating"
+          className="input"
+          name="rating"
+          value={form.rating}
+          onChange={onChange}
+          disabled={isLoading || isSaving}
+        >
+          {[1, 2, 3, 4, 5].map(rating => (
+            <option key={rating} value={rating}>{rating} / 5</option>
+          ))}
+        </select>
+        <label className="sr-only" htmlFor="comment">Comment (optional)</label>
+        <textarea
+          id="comment"
+          className="input"
+          name="comment"
+          placeholder="Comment (optional)"
+          value={form.comment}
+          onChange={onChange}
+          rows={3}
+          disabled={isLoading || isSaving}
+        />
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        <button className="btn" type="submit">Save</button>
+        <button className="btn" type="submit" disabled={isLoading || isSaving}>
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
       </form>
     </div>
   )
