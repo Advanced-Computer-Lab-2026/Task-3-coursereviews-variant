@@ -18,11 +18,27 @@ export default function ReviewForm() {
   useEffect(() => {
     if (!id) return
     // TODO
+    async function loadReview() {
+      try {
+        const res = await api.get('/reviews/' + id);
+        const { courseCode, rating, comment } = res.data.review;
+        setForm({ courseCode, rating: Number(rating), comment: comment || '' });
+      } catch (err) {
+        setError(err?.response?.data?.message || 'Failed to load review');
+      }
+    }
+
+    loadReview();
   }, [id])
 
   // TODO: update `form` when an input changes (rating should be a number).
   function onChange(e) {
     // TODO
+    const { name, value } = e.target;
+    setForm(prevForm => ({
+      ...prevForm,
+      [name]: name === 'rating' ? Number(value) : value
+    }));
   }
 
   // TODO: POST a new review, or PATCH the existing one when editing,
@@ -31,6 +47,22 @@ export default function ReviewForm() {
     e.preventDefault()
     setError('')
     // TODO
+    const review = {
+      courseCode: form.courseCode,
+      rating: form.rating,
+      comment: form.comment
+    }
+
+    try {
+      if (id) {
+        await api.patch('/reviews/' + id, review);
+      } else {
+        await api.post('/reviews', review);
+      }
+      nav('/reviews');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to save review');
+    }
   }
 
   return (
@@ -38,6 +70,15 @@ export default function ReviewForm() {
       <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
       <form onSubmit={onSubmit} className="space-y-3">
         {/* TODO: course code input, rating select (1-5) and comment textarea */}
+        <input className="input" placeholder="Course Code" value={form.courseCode} onChange={onChange} name="courseCode" />
+        <select className="input" value={form.rating} onChange={onChange} name="rating">
+          <option value="1">1/5</option>
+          <option value="2">2/5</option>
+          <option value="3">3/5</option>
+          <option value="4">4/5</option>
+          <option value="5">5/5</option>
+        </select>
+        <textarea className="input" placeholder="Comment" value={form.comment} onChange={onChange} name="comment" />
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <button className="btn" type="submit">Save</button>
       </form>
