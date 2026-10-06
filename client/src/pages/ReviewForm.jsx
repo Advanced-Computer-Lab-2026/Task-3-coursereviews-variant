@@ -17,12 +17,26 @@ export default function ReviewForm() {
   // TODO (edit mode): when there is an `id`, load the review and fill the form.
   useEffect(() => {
     if (!id) return
-    // TODO
+    api.get(`/reviews/${id}`)
+      .then(res => {
+        setForm({
+          courseCode: res.data.review.courseCode,
+          rating: res.data.review.rating,
+          comment: res.data.review.comment || ''
+        })
+      })
+      .catch(err => {
+        setError(err.response?.data?.message || err.message)
+      })
   }, [id])
 
   // TODO: update `form` when an input changes (rating should be a number).
   function onChange(e) {
-    // TODO
+    const { name, value } = e.target
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'rating' ? Number(value) : value
+    }))
   }
 
   // TODO: POST a new review, or PATCH the existing one when editing,
@@ -30,7 +44,21 @@ export default function ReviewForm() {
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
-    // TODO
+    try {
+      const payload = {
+        courseCode: form.courseCode,
+        rating: form.rating,
+        comment: form.comment
+      }
+      if (id) {
+        await api.patch(`/reviews/${id}`, payload)
+      } else {
+        await api.post('/reviews', payload)
+      }
+      nav('/reviews')
+    } catch (err) {
+      setError(err.response?.data?.message || err.message)
+    }
   }
 
   return (
@@ -38,6 +66,37 @@ export default function ReviewForm() {
       <h1 className="text-xl font-semibold mb-4">{id ? 'Edit' : 'Write'} Review</h1>
       <form onSubmit={onSubmit} className="space-y-3">
         {/* TODO: course code input, rating select (1-5) and comment textarea */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Course Code</label>
+          <input
+            name="courseCode"
+            value={form.courseCode}
+            onChange={onChange}
+            className="input"
+            required
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Rating</label>
+          <select
+            name="rating"
+            value={form.rating}
+            onChange={onChange}
+            className="input"
+          >
+            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Comment</label>
+          <textarea
+            name="comment"
+            value={form.comment}
+            onChange={onChange}
+            className="input"
+            rows="3"
+          />
+        </div>
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <button className="btn" type="submit">Save</button>
       </form>
