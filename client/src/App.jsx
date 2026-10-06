@@ -13,7 +13,6 @@ export default function App() {
       <nav className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link to="/" className="font-semibold">Course Review Board</Link>
-          <Link to="/reviews" className="text-sm">Reviews</Link>
           {user && <Link to="/reviews/new" className="text-sm">Write Review</Link>}
         </div>
         <div className="flex items-center gap-2">
@@ -32,7 +31,7 @@ export default function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<Navigate to="/reviews" />} />
+        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reviews" element={<Reviews />} />
