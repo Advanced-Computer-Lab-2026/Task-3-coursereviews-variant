@@ -19,10 +19,11 @@ export default function ReviewForm() {
     async function loadReview() {
       try {
         const { data } = await api.get(`/reviews/${id}`)
+        const review = data.review
         setForm({
-          courseCode: data.courseCode,
-          rating: data.rating,
-          comment: data.comment || ''
+          courseCode: review.courseCode,
+          rating: review.rating,
+          comment: review.comment || ''
         })
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load review')
