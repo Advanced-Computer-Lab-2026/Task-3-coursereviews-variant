@@ -18,11 +18,14 @@ export default function ReviewForm() {
   useEffect(() => {
     if (!id) return
     api.get(`/reviews/${id}`)
-      .then(res => setForm({
-        courseCode: res.data.courseCode,
-        rating: res.data.rating,
-        comment: res.data.comment || ''
-      }))
+      .then(res => {
+        const r = res.data.review;
+        setForm({
+          courseCode: r.courseCode,
+          rating: r.rating,
+          comment: r.comment || ''
+        });
+      })
       .catch(err => setError(err.response?.data?.message || 'Failed to load review'))
   }, [id])
 
