@@ -14,10 +14,15 @@ Create `server/.env` yourself with:
 
 ```
 PORT=4000
+CLIENT_ORIGIN=http://localhost:5175
 MONGO_URI=mongodb://tasks:pass1234@ac-j3acrgb-shard-00-00.lueesfz.mongodb.net:27017,ac-j3acrgb-shard-00-01.lueesfz.mongodb.net:27017,ac-j3acrgb-shard-00-02.lueesfz.mongodb.net:27017/?ssl=true&replicaSet=atlas-6to6iy-shard-0&authSource=admin&appName=Cluster0
 JWT_SECRET=change-me
 JWT_EXPIRES_IN=7d
 ```
+
+In development, the API also accepts `localhost` and `127.0.0.1` client ports
+so Vite can use a fallback port when `:5175` is busy. In production, set
+`CLIENT_ORIGIN` to the exact URL serving the client.
 
 `JWT_SECRET` is the key the server signs and verifies login tokens with —
 anyone who knows it can forge a token for any user, so replace `change-me`

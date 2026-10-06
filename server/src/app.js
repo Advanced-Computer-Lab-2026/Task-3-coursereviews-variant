@@ -8,7 +8,17 @@ import userRoutes from './routes/users.js';
 const app = express();
 
 app.use(morgan('dev'));
-app.use(cors({ origin: 'http://localhost:5175', credentials: false }));
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5175';
+app.use(cors({
+  origin(origin, callback) {
+    const isLocalDevelopmentOrigin = process.env.NODE_ENV !== 'production'
+      && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin || '');
+
+    const isAllowedOrigin = !origin || origin === clientOrigin || isLocalDevelopmentOrigin;
+    return callback(null, isAllowedOrigin);
+  },
+  credentials: false
+}));
 app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
