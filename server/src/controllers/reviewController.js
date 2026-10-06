@@ -56,6 +56,11 @@ export async function createReview(req, res, next) {
     const { value, error } = reviewSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.message });
 
+    const code = value.courseCode.trim().toUpperCase();
+    if (await Review.exists({ courseCode: code, reviewedBy: req.user.id })) {
+      return res.status(409).json({ message: 'You already reviewed this course' });
+    }
+
     const doc = await Review.create({ ...value, reviewedBy: req.user.id });
     res.status(201).json({ review: doc });
   } catch (err) {
@@ -77,6 +82,11 @@ export async function updateReview(req, res, next) {
     const merged = { ...current, ...req.body };
     const { value, error } = reviewSchema.validate(merged, { abortEarly: false, stripUnknown: true, convert: true });
     if (error) return res.status(400).json({ message: error.message });
+
+    const code = value.courseCode.trim().toUpperCase();
+    if (await Review.exists({ courseCode: code, reviewedBy: req.user.id, _id: { $ne: existing._id } })) {
+      return res.status(409).json({ message: 'You already reviewed this course' });
+    }
 
     const doc = await Review.findByIdAndUpdate(req.params.id, { $set: value }, { new: true, runValidators: true });
     res.json({ review: doc });
