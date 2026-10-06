@@ -19,9 +19,9 @@ export default function ReviewForm() {
     if (!id) return
     api.get(`/reviews/${id}`)
       .then(res => setForm({
-        courseCode: res.data.courseCode || '',
-        rating: res.data.rating || 5,
-        comment: res.data.comment || ''
+        courseCode: res.data.review.courseCode || '',
+        rating: res.data.review.rating || 5,
+        comment: res.data.review.comment || ''
       }))
       .catch(err => setError(err.response?.data?.message || err.message))
   }, [id])
