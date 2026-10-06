@@ -3,6 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
+    "install:all": "npm --prefix .. run install:all",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
