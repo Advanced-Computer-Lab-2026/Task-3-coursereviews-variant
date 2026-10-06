@@ -83,12 +83,12 @@ server's `message` in the `error` box — try it: an invalid rating returns
 Do **not** send `reviewedBy` — the server takes the reviewer from your token
 and rejects the request if you send it.
 
-### TODO 3 — editing a review
+
+
+You're expected to use AI tools while building this. But ### TODO 3 — editing a review
 When the URL has an `id`, load the review with `GET /api/reviews/:id` and fill
 the form with its `courseCode`, `rating` and `comment`. On submit, send
 `PATCH /api/reviews/:id` instead of `POST`. Editing someone else's review
-returns `403` — show that message too.
-
-You're expected to use AI tools while building this. But you should be able
+returns `403` — show that message too.you should be able
 to explain, for any line in your component, *why* it's there and what
 happens if you delete it. We will ask.
